@@ -7,13 +7,7 @@ from dataset.base_image_dataset import BaseImageDataset
 
 
 class LTCC(BaseImageDataset):
-    """ LTCC
-
-    Reference:
-        Qian et al. Long-Term Cloth-Changing Person Re-identification. arXiv:2005.12633, 2020.
-
-    URL: https://naiq.github.io/LTCC_Perosn_ReID.html#
-    """
+   
     def __init__(self, dataset_root='data', dataset_filename='LTCC_ReID', verbose=True, **kwargs):
         self.dataset_dir = osp.join(dataset_root, dataset_filename)
         self.train_dir = osp.join(self.dataset_dir, 'train')
@@ -37,7 +31,7 @@ class LTCC(BaseImageDataset):
             print("  subset   | # ids | # images | # clothes")
             print("  ----------------------------------------")
             print("  train    | {:5d} | {:8d} | {:9d}".format(num_train_pids, num_train_imgs, num_train_clothes))
-            # print("  test     | {:5d} | {:8d} | {:9d}".format(num_test_pids, num_test_imgs, num_test_clothes))
+           
             print("  query    | {:5d} | {:8d} |".format(num_test_pids, num_query_imgs))
             print("  gallery  | {:5d} | {:8d} |".format(num_test_pids, num_gallery_imgs))
             print("  ----------------------------------------")
