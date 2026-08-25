@@ -7,26 +7,7 @@ from dataset.base_image_dataset import BaseImageDataset
 
 
 class CelebreID(BaseImageDataset):
-    """
-    Reference:
-    Celebrities-ReID: A Benchmark for Clothes Variation in Long-Term Person Re-Identification
-    Beyond Scalar Neuron: Adopting Vector-Neuron Capsules for Long-Term Person Re-Identification
-    URL: https://github.com/Huang-3/Celeb-reID
-
-    Dataset statistics:
-    split | Training |     Testing     | total
-    ---------------------------------------------
-    subsets| Training | query | gallery | total
-    ---------------------------------------------
-    #ID    |   632    |  420  |   420   | 1,052
-    ---------------------------------------------
-    #Image |  20,208  | 2,972 |  11,006 | 34,186
-
-    The resolution of each image is 128*256.
-
-    The meaning of name of each image:
-    For example "x_y_z.jpg", "x" represents ID, "y" represents y-th image, "z" is meaningless...
-    """
+  
 
     def __init__(self, dataset_root='data', dataset_filename='Celeb-reID', verbose=True, **kwargs):
         super(CelebreID, self).__init__()
