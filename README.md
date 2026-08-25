@@ -26,7 +26,6 @@ python main.py --gpu_devices 0 --dataset prcc --dataset_root DATASET_ROOT --data
 
 ### Evaluation
 
-
 python main.py --gpu_devices 0 --dataset DATASET --dataset_root DATASET_ROOT --dataset_filename DATASET_FILENAME --resume RESUME_PATH --save_dir SAVE_DIR --evaluate
 
 --dataset: replace DATASET with the dataset name
@@ -37,5 +36,5 @@ python main.py --gpu_devices 0 --dataset DATASET --dataset_root DATASET_ROOT --d
 
 ### Acknowledgement
 
-Some related work can be found from the following link
-[link](https://github.com/QizaoWang/FIRe-CCReID)
+Some related work can be found from the following 
+(https://github.com/QizaoWang/FIRe-CCReID)
