@@ -1,11 +1,4 @@
-"""
-@author:  Qizao Wang
-@contact: qzwang22@m.fudan.edu.cn
 
-TIFS 2024 paper: Exploring Fine-Grained Representation and Recomposition for Cloth-Changing Person Re-Identification
-URL: https://ieeexplore.ieee.org/document/10557733
-GitHub: https://github.com/QizaoWang/FIRe-CCReID
-"""
 
 from __future__ import absolute_import
 
