@@ -5,14 +5,7 @@ import os.path as osp
 
 
 class PRCC(object):
-    """ PRCC
-
-    Reference:
-        Yang et al. Person Re-identification by Contour Sketch under Moderate Clothing Change. TPAMI, 2019.
-
-    URL: https://drive.google.com/file/d/1yTYawRm4ap3M-j0PjLQJ--xmZHseFDLz/view
-    """
-
+    
     def __init__(self, dataset_root='data', dataset_filename='prcc', verbose=True, **kwargs):
         self.dataset_dir = osp.join(dataset_root, dataset_filename)
         self.train_dir = osp.join(self.dataset_dir, 'rgb/train')
@@ -42,7 +35,7 @@ class PRCC(object):
             print("  --------------------------------------------")
             print("  train       | {:5d} | {:8d} | {:9d}".format(num_train_pids, num_train_imgs, num_train_clothes))
             print("  val         | {:5d} | {:8d} | {:9d}".format(num_val_pids, num_val_imgs, num_val_clothes))
-            # print("  test        | {:5d} | {:8d} | {:9d}".format(num_test_pids, num_test_imgs, num_test_clothes))
+          
             print("  query(same) | {:5d} | {:8d} |".format(num_test_pids, num_query_imgs_same))
             print("  query(diff) | {:5d} | {:8d} |".format(num_test_pids, num_query_imgs_diff))
             print("  gallery     | {:5d} | {:8d} |".format(num_test_pids, num_gallery_imgs))
@@ -62,7 +55,7 @@ class PRCC(object):
         self.gallery_idx = gallery_idx
 
     def _check_before_run(self):
-        """Check if all files are available before going deeper"""
+        
         if not osp.exists(self.dataset_dir):
             raise RuntimeError("'{}' is not available".format(self.dataset_dir))
         if not osp.exists(self.train_dir):
@@ -141,7 +134,7 @@ class PRCC(object):
                 pid = int(osp.basename(pdir))
                 img_dirs = glob.glob(osp.join(pdir, '*.jpg'))
                 for img_dir in img_dirs:
-                    # pid = pid2label[pid]
+                    
                     camid = cam2label[cam]
                     if cam == 'A':
                         clothes_id = pid2label[pid] * 2
@@ -159,7 +152,7 @@ class PRCC(object):
                 pid2imgidx[pid] = []
             pid2imgidx[pid].append(idx)
 
-        # get 10 gallery index to perform single-shot test
+        
         gallery_idx = {}
         random.seed(3)
         for idx in range(0, 10):
