@@ -102,9 +102,9 @@ def get_args():
     parser.add_argument('--evaluate', action='store_true', help="evaluation only")
     parser.add_argument('--print_train_info_epoch_freq', type=int, default=5,
                         help="print training information per #epoch, default -1 means don't print")
-    parser.add_argument('--start_eval_epoch', type=int, default=0,
+    parser.add_argument('--start_eval_epoch', type=int, default=25,
                         help="start to evaluate after training a specific epoch")
-    parser.add_argument('--eval_epoch', type=int, default=5,
+    parser.add_argument('--eval_epoch', type=int, default=1,
                         help="run evaluation for every N epochs (set to -1 to test after training)")
     parser.add_argument('--reranking', action='store_true', help='result re_ranking')
     parser.add_argument('--save_dir', type=str, default='log')
@@ -117,13 +117,13 @@ def get_args():
     parser.add_argument('--temperature', type=int, default=16,
                         help="scale temperature for AttrAwareLoss")
 
-    parser.add_argument('--eps', type=float, default=0.4,
+    parser.add_argument('--eps', type=float, default=0.55,
                         help="eps for DBSCAN")
     parser.add_argument('--k1', type=int, default=20,
                         help="k1 for k-reciprocal jaccard distance")
     parser.add_argument('--k2', type=int, default=6,
                         help="k2 for k-reciprocal jaccard distance")
-    parser.add_argument('--FAR_weight', type=float, default=0.3,
+    parser.add_argument('--FAR_weight', type=float, default=0.5,
                         help="weight of the FAR loss")
 
     args = parser.parse_args()
