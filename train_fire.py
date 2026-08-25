@@ -1,12 +1,3 @@
-"""
-@author:  Qizao Wang
-@contact: qzwang22@m.fudan.edu.cn
-
-TIFS 2024 paper: Exploring Fine-Grained Representation and Recomposition for Cloth-Changing Person Re-Identification
-URL: https://ieeexplore.ieee.org/document/10557733
-GitHub: https://github.com/QizaoWang/FIRe-CCReID
-"""
-
 import collections
 import time
 from tqdm import tqdm, trange
@@ -26,6 +17,51 @@ from model import fire
 from scheduler.warm_up_multi_step_lr import WarmupMultiStepLR
 from utils.util import AverageMeter
 from utils.faiss_utils import search_index_pytorch, search_raw_array_pytorch, index_init_gpu, index_init_cpu
+
+
+def cross_fgid_identity_alignment_loss(feat, pid, fgid):
+  
+    feat_norm = F.normalize(feat, p=2, dim=1)
+    loss = torch.tensor(0.0, device=feat.device)
+    count = 0
+
+    for i in range(feat.size(0)):
+        
+        pos_mask = (pid == pid[i]) & (fgid != fgid[i])
+        pos_mask[i] = False
+        if pos_mask.sum() == 0:
+            continue
+        
+        center = feat_norm[pos_mask].mean(0).detach()
+       
+        loss += 1.0 - (feat_norm[i] * center).sum()
+        count += 1
+
+    return loss / max(count, 1)
+
+def batch_relation_smoothed_supcon_loss(feat, pid, tau=0.07, alpha=0.3):
+   
+    feat_norm = F.normalize(feat, p=2, dim=1)
+
+    with torch.no_grad():
+        sim_matrix = torch.mm(feat_norm, feat_norm.T)
+        sim_matrix.fill_diagonal_(-1e9)
+        soft_targets = F.softmax(sim_matrix / tau, dim=1)
+
+    pid_eq = (pid.unsqueeze(0) == pid.unsqueeze(1)).float()
+    pid_eq.fill_diagonal_(0)
+    hard_targets = pid_eq / (pid_eq.sum(1, keepdim=True) + 1e-8)
+
+    fused = (1 - alpha) * hard_targets + alpha * soft_targets
+    fused = fused / (fused.sum(1, keepdim=True) + 1e-8)
+
+    logits = torch.mm(feat_norm, feat_norm.T) / tau
+    logits.fill_diagonal_(-1e9)
+    log_probs = F.log_softmax(logits, dim=1)
+
+  
+    return -(fused * log_probs).sum(1).mean()
+
 
 
 def k_reciprocal_neigh(initial_rank, i, k1):
@@ -235,6 +271,9 @@ def train(args, epoch, dataset, train_loader, model, classifier,
     FFM_losses = AverageMeter()
     FAR_losses = AverageMeter()
 
+    brs_losses = AverageMeter()  
+    cfgid_losses = AverageMeter()  
+
     num_fg_classes = 0
     if epoch > fg_start_epoch:
         fg_center, pseudo_train_dataset, pid2fgids, num_fg_classes = \
@@ -300,6 +339,37 @@ def train(args, epoch, dataset, train_loader, model, classifier,
             FAR_loss = class_criterion(y_FAR, pid.repeat(FAR_times)) * FAR_weight
             loss += FAR_loss
 
+            
+            lam = min(0.1, 0.02 * (epoch - fg_start_epoch))
+            unique_pids = pid.unique()
+            avg_outfits = sum(fgid[pid == p].unique().numel()
+                              for p in unique_pids) / len(unique_pids)
+            outfit_gate = torch.sigmoid(
+                torch.tensor((avg_outfits - 2.5) * 3.0, device=feat.device)
+            ).item()
+
+
+            
+            learned_slope = torch.clamp(model.module.alpha_slope, min=0.01, max=0.04)
+
+            adaptive_alpha = 0.2 + torch.clamp(
+                (avg_outfits - 2) * learned_slope,
+                min=0.0,
+                max=0.2
+            )
+
+            brs_loss = batch_relation_smoothed_supcon_loss(
+                feat, pid, alpha=adaptive_alpha
+            ) * lam * outfit_gate
+
+            cfgid_loss = cross_fgid_identity_alignment_loss(
+                feat, pid, fgid
+            ) * 0.02 * (outfit_gate ** 2)
+
+            afgrc_loss = brs_loss + cfgid_loss
+            loss += afgrc_loss
+           
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -309,11 +379,16 @@ def train(args, epoch, dataset, train_loader, model, classifier,
             triplet_losses.update(triplet_loss.item(), pid.size(0))
             FFM_losses.update(FFM_loss.item(), pid.size(0))
             FAR_losses.update(FAR_loss.item(), pid.size(0))
+            brs_losses.update(brs_loss.item(), pid.size(0))  
+            cfgid_losses.update(cfgid_loss.item(), pid.size(0))   
 
     if args.print_train_info_epoch_freq != -1 and epoch % args.print_train_info_epoch_freq == 0:
         print('Epoch{0} Cls:{cls_loss.avg:.4f} Tri:{triplet_loss.avg:.4f} '
-              'FFM:{FFM_loss.avg:.4f} FAR:{FAR_loss.avg:.4f} n_fg:{num_fg_classes} '.format(
+              'FFM:{FFM_loss.avg:.4f} FAR:{FAR_loss.avg:.4f} '
+              'BRS:{brs_loss.avg:.4f} CFGID:{cfgid_loss.avg:.4f} n_fg:{num_fg_classes} '.format(
             epoch, cls_loss=class_losses, triplet_loss=triplet_losses,
-            FFM_loss=FFM_losses, FAR_loss=FAR_losses, num_fg_classes=num_fg_classes))
+            FFM_loss=FFM_losses, FAR_loss=FAR_losses,
+            brs_loss=brs_losses, cfgid_loss=cfgid_losses, num_fg_classes=num_fg_classes))
 
+     
     scheduler.step()
